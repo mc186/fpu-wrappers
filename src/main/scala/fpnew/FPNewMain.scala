@@ -1,13 +1,12 @@
-package fpuwrapper.fpnew
+package fpnew
 
 import chisel3._
 import chisel3.experimental.ChiselEnum
 import chisel3.util.Decoupled
-import fpuwrapper.EmitChiselModule
+import chisel3.stage.ChiselStage
 import fpuwrapper.FloatType
 import fpuwrapper.FloatS
 import fpuwrapper.FloatD
-import fpuwrapper.Synthesis
 
 class FPConfig(
 )
@@ -28,6 +27,7 @@ object FPOperation extends ChiselEnum {
 object FPRoundingMode extends ChiselEnum {
   val RNE, RTZ, RDN, RUP, RMM, DYN = Value
 }
+
 
 class FPRequest(val fLen: Int) extends Bundle {
   val operands = Vec(3, UInt(fLen.W))
@@ -52,9 +52,6 @@ class FPResponse(val fLen: Int) extends Bundle {
   val status = new FPStatus()
 }
 
-/** FPNew IO port. For meanings of ports, visit
-  * https://github.com/pulp-platform/fpnew/blob/develop/docs/README.md
-  */
 class FPIO(val fLen: Int) extends Bundle {
   val req = Flipped(Decoupled(new FPRequest(fLen)))
   val resp = Decoupled(new FPResponse(fLen))
@@ -62,18 +59,19 @@ class FPIO(val fLen: Int) extends Bundle {
   val busy = Output(Bool())
 }
 
-class IEEEFPU(
-    val floatType: FloatType,
+
+class FPUNew(
+    val floatwidth: Int,
     val lanes: Int,
     val stages: Int
 ) extends Module {
 
-  val fLen = floatType.width() * lanes
+  val fLen = floatwidth * lanes
   val io = IO(new FPIO(fLen))
 
   val blackbox = Module(
     new FPNewBlackbox(
-      floatType,
+      floatwidth,
       lanes,
       stages,
       tagWidth = 0,
@@ -108,36 +106,6 @@ class IEEEFPU(
   io.busy := blackbox.io.busy_o
 }
 
-object IEEEFPU extends EmitChiselModule {
-  emitChisel(
-    (floatType, lanes, stages) => new IEEEFPU(floatType, lanes, stages),
-    "IEEEFPU",
-    "fpnew"
-  )
-}
-
-object IEEEFPUSynth extends EmitChiselModule {
-  for (floatType <- Seq(FloatS, FloatD)) {
-    val floatName = floatType.kind().toString()
-    for (stages <- Seq(2, 3)) {
-      for (lanes <- Seq(1)) {
-        emitChisel(
-          (floatType, lanes, stages) => new IEEEFPU(floatType, lanes, stages),
-          "IEEEFPU",
-          "fpnew",
-          allStages = Seq(stages),
-          floatTypes = Seq(floatType),
-          lanes = Seq(lanes)
-        )
-        val name = s"IEEEFPU_${floatName}${lanes}l${stages}s_fpnew"
-
-        val fileName = s"FPNewBlackbox_${floatType.kind().toString()}${lanes}l${stages}s.synth.v"
-        Synthesis.build(
-          Seq(s"${name}.v", s"./fpu-wrappers/resources/fpnew/${fileName}"),
-          s"${name}_IEEEFPU",
-          s"${name}"
-        )
-      }
-    }
-  }
+object FPNewDriver extends App {
+  (new ChiselStage).emitVerilog(new FPUNew(floatwidth = 16, lanes = 1, stages = 0))
 }

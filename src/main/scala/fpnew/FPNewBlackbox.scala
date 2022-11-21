@@ -1,4 +1,4 @@
-package fpuwrapper.fpnew
+package fpnew
 
 import chisel3._
 import chisel3.experimental._
@@ -6,7 +6,7 @@ import chisel3.util.HasBlackBoxResource
 import fpuwrapper.FloatType
 
 class FPNewBlackbox(
-    floatType: FloatType,
+    floatwidth: Int,
     lanes: Int,
     stages: Int,
     tagWidth: Int,
@@ -14,7 +14,7 @@ class FPNewBlackbox(
       Map()
     )
     with HasBlackBoxResource {
-  val fLen = floatType.width() * lanes
+  val fLen = floatwidth * lanes
   val io = IO(new Bundle {
     val clk_i = Input(Clock())
     val rst_ni = Input(Bool())
@@ -38,5 +38,7 @@ class FPNewBlackbox(
     val busy_o = Output(Bool())
   }).suggestName("io")
 
-  addResource(s"/fpnew/FPNewBlackbox_${floatType.kind().toString()}${lanes}l${stages}s.synth.v")
+ // addResource(s"/fpnew/FPNewBlackbox_${floatType.kind().toString()}${lanes}l${stages}s.synth.v")
+  addResource(s"/fpnew/FPNewBlackbox_B1l0s.synth.v")
+
 }

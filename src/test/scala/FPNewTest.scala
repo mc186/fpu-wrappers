@@ -1,17 +1,17 @@
-package fpuwrapper.fpnew
+package fpnew
 
 import chisel3._
 import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
-import fpuwrapper.FloatS
+//import fpuwrapper.FloatS
 import fpuwrapper.Simulator
 
-class IEEEFPUTest extends AnyFreeSpec with ChiselScalatestTester {
+class FPUTest extends AnyFreeSpec with ChiselScalatestTester {
   // fpnew does not support icarus verilog
-  for (stages <- 1 to 5) {
-    s"IEEEFPU of ${stages} stages should work" in {
-      test(new IEEEFPU(FloatS, 2, stages))
-        .withAnnotations(Simulator.getAnnotations(useIcarus = false, useVCS = false)) { dut =>
+  for (stages <- 0 to 2) {
+    s"FPU of ${stages} stages should work" in {
+      test(new FPUNew(32, 1, stages))
+         .withAnnotations(Simulator.getAnnotations(useIcarus = false, useVCS = false)) { dut =>
           dut.clock.step(16)
 
           def enqueueReq() {
@@ -23,7 +23,7 @@ class IEEEFPUTest extends AnyFreeSpec with ChiselScalatestTester {
             dut.io.req.valid.poke(false.B)
           }
 
-          def expectResp()(x: IEEEFPU => Unit) {
+          def expectResp()(x: FPUNew => Unit) {
             val expectedCycles = stages - 1
             var cycles = 0
             dut.io.resp.ready.poke(true.B)
@@ -41,16 +41,16 @@ class IEEEFPUTest extends AnyFreeSpec with ChiselScalatestTester {
             )
           }
 
-          dut.io.req.bits.operands(0).poke("h3f8000003f800000".U) // 1
-          dut.io.req.bits.operands(1).poke("h4000000040000000".U) // 2
-          dut.io.req.bits.operands(2).poke("h4040000040400000".U) // 3
+          dut.io.req.bits.operands(0).poke("h3f800000".U) // 1
+          dut.io.req.bits.operands(1).poke("h40000000".U) // 2
+          dut.io.req.bits.operands(2).poke("h40400000".U) // 3
           dut.io.req.bits.op.poke(FPOperation.FMADD)
           dut.io.req.bits.srcFormat.poke(FPFloatFormat.Fp32)
           dut.io.req.bits.dstFormat.poke(FPFloatFormat.Fp32)
           enqueueReq()
           expectResp() { dut =>
-            dut.io.resp.bits.result.expect("h40a0000040a00000".U)
-          } // 5
+            dut.io.resp.bits.result.expect("h40a00000".U)
+          } 
         }
     }
   }

@@ -1,7 +1,7 @@
 package fpuwrapper
 
-import _root_.hardfloat.fNFromRecFN
-import _root_.hardfloat.recFNFromFN
+//import _root_.hardfloat.fNFromRecFN
+//import _root_.hardfloat.recFNFromFN
 import chisel3._
 
 /** Trait for floating point type
@@ -17,7 +17,7 @@ trait FloatType {
   // auto implemented
   // total bits
   def width(): Int = exp() + sig()
-  // HF width in bits
+ /* // HF width in bits
   def widthHardfloat(): Int = width() + 1
   // FloPoCo width in bits
   def widthFlopoco(): Int = width() + 2
@@ -37,6 +37,7 @@ trait FloatType {
     (((BigInt(1) << (exp() - 1)) - 1) << (sig() - 1)).U(width().W)
   def oneHardfloatChisel() =
     (BigInt(1) << (exp() + sig() - 1)).U(widthHardfloat().W)
+*/
 }
 
 /** Enum of floating point types
